@@ -21,7 +21,7 @@
 #   Cheat Lake, a nearby resevoir
 #   Cheat Mountain, one of the highest mountains in the Alleghenies
 #
-%w[rubygems camping camping/db erb open-uri acts_as_versioned wrap diffr responder ambition].each { |f| require f }
+%w[rubygems camping camping/db erb open-uri acts_as_versioned wrap diffr responder ambition json].each { |f| require f }
 gem 'camping', '>=1.4.152'
 
 Camping.goes :Cheat
@@ -66,6 +66,35 @@ module Cheat::Models
 end
 
 module Cheat::Controllers
+  class JsonAPIShow < R '/j/(\w+)'
+    def get(title)
+      @headers['Content-Type'] = 'application/json'
+
+      sheet = Sheet.detect { |s| s.title == title }
+      return { 'Error!' => "Cheat sheet `#{title}' not found." }.to_json unless sheet
+
+      return { sheet.title => sheet.body }.to_json
+    end
+  end
+
+  class JsonAPIRecent < R '/jr'
+    def get
+      @headers['Content-Type'] = 'application/json'
+
+      sheets = Sheet.sort_by { |s| -s.created_at }.first(15).map(&:title)
+      return { 'Recent Cheat Sheets' => sheets }.to_json
+    end
+  end
+
+  class JsonAPIAll < R '/ja'
+    def get
+      @headers['Content-Type'] = 'application/json'
+
+      sheets = Sheet.sort_by(&:title).map(&:title)
+      return { 'All Cheat Sheets' => sheets }.to_json
+    end
+  end
+
   class APIShow < R '/y/(\w+)'
     def get(title)
       @headers['Content-Type'] = 'text/plain'
